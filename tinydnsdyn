@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # Copyright 2011-2016 Felix Hanley <felix@userspace.com.au>
 #
@@ -20,8 +20,8 @@ import sys
 import os
 import base64
 import crypt
-import urlparse
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import urllib.parse
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import ssl
 from optparse import OptionParser
 
@@ -40,10 +40,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         response = 'nohost'
         hosts = []
         address = self.client_address[0]
-        auth_header= self.headers.getheader('Authorization')
+        auth_header= self.headers.get('Authorization')
         # get query string
         path,_,query_str = self.path.partition('?')
-        query = urlparse.parse_qs(query_str)
+        query = urllib.parse.parse_qs(query_str)
         # only accept index requests
         if path != '/':
             response = 'notfound'
@@ -53,7 +53,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             response = 'badauth'
         else:
             passhash = auth_header.replace('Basic ','',1).strip()
-            username,password = base64.b64decode(passhash).split(':',1)
+            username,password = base64.b64decode(passhash).decode('utf-8').split(':',1)
             if self.auth.check(username, password):
                 if 'hostname' not in query:
                     response = 'notfqdn'
@@ -83,7 +83,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.datafile.commit()
 
         self.end_headers()
-        self.wfile.write(response)
+        self.wfile.write(response.encode('utf-8'))
         sys.stderr.write("client: %s, status: %s\n" % (address, response))
 
 
